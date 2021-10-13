@@ -1,0 +1,176 @@
+{
+    "4":
+    {
+        "name": "Duke",
+        "seasonal": "no",
+        "hp": 4000000,
+        "img_url":"https://profileimages.torn.com/4d661456-1798-ad32-4.png",
+        "active":"yes",
+        "items":
+        {
+            "Weapons":
+            {
+                "837": "Rheinmetall MG 3 (Primary)",
+                "838": "Homemade Pocket Shotgun (Secondary)",
+                "839": "Madball (Melee)",
+                "840": "Nail Bomb (Temporary)"
+            },
+            "Clothing":
+            {
+                "841": "Classic Fedora",
+                "842": "Pinstripe Suit Trousers",
+                "843": "Duster"
+            }
+        }
+    },
+    "15":
+    {
+        "name": "Leslie",
+        "seasonal": "no",
+        "hp": 3000000,
+        "img_url":"https://profileimages.torn.com/4d661456-17bc-2098-15.png",
+        "active":"yes",
+        "items":
+        {
+            "Weapons":
+            {
+                "830": "Nock Gun (Primary)",
+                "831": "Beretta Pico (Secondary)",
+                "832": "Riding Crop (Melee)",
+                "833": "Sand (Temporary)"
+            },
+            "Clothing":
+            {
+                "836": "Black Oxfords",
+                "834": "Sweatpants",
+                "835": "String Vest"
+            }
+        }
+    },
+    "19":
+    {
+        "name": "Jimmy",
+        "seasonal": "no",
+        "hp": 1500000,
+        "img_url":"https://profileimages.torn.com/4d661456-205b-349e-19.png",
+        "active":"yes",
+        "items":
+        {
+            "Weapons":
+            {
+                "1053": "Bread Knife (Melee)",
+                "1042": "Concussion Grenade (Temporary)"
+            },
+            "Clothing":
+            {
+                "982": "Ripped Jeans"
+            },
+            "Other Items":
+            {
+                "368": "Lawyer Business Card",
+                "587": "Bag of Sherbet",
+                "586": "Jawbreaker",
+                "151": "Pixie Sticks"
+            }
+        }
+    },
+    "20":
+    {
+        "name": "Fernando",
+        "seasonal": "no",
+        "hp": 2000000,
+        "img_url":"https://profileimages.torn.com/4d600926-9be6-ab38-20.png",
+        "active":"yes",
+        "items":
+        {
+            "Weapons":
+            {
+                "1055": "Poison Umbrella (Melee)"
+            },
+            "Clothing":
+            {
+                "983": "Bandit Mask"
+            },
+            "Other Items":
+            {
+                "367": "Feathery Hotel Coupon"
+            }
+        }
+    },
+    "21":
+    {
+        "name": "Tiny",
+        "seasonal": "no",
+        "hp": 3500000,
+        "img_url":"https://profileimages.torn.com/b2ee0bbf-06f4-f3ae-21.jpg",
+        "active":"yes",
+        "items":
+        {
+            "Weapons":
+            {
+                "850": "Sledgehammer (Melee)"
+            },
+            "Other Items":
+            {
+                "530": "Can of Munster (Energy Can)",
+                "532": "Can of Red Cow (Energy Can)",
+                "533": "Can of Taurine Elite (Energy Can)",
+                "818": "Six Pack of Energy Drink (Supply Pack)",
+                "330": "Boxing Gloves (Stat Enhancers)",
+                "331": "Dumbbells (Stat Enhancers)"
+            }
+        }
+    },
+    "10":
+    {
+        "name": "Scrooge",
+        "seasonal": "Available in December",
+        "hp": 9000000,
+        "img_url":"https://profileimages.torn.com/50bdc916-3fc2-d678-10.png",
+        "active":"no",
+        "items":
+        {
+            "Weapons":
+            {
+                "76": "Snow Cannon (Secondary)",
+                "605": "Diamond Icicle (Melee)",
+                "611": "Snowball (Temporary)"
+            },
+            "Clothing":
+            {
+                "729": "Scrooge's Boots",
+                "730": "Scrooge's Gloves",
+                "726": "Scrooge's Top Hat",
+                "727": "Scrooge's Topcoat",
+                "728": "Scrooge's Trousers"
+            }
+        }
+    },
+    "17":
+    {
+        "name": "Easter Bunny",
+        "seasonal": "Available in April",
+        "hp": 7000000,
+        "img_url":"https://profileimages.torn.com/4d600926-f404-8dc4-17.jpg",
+        "active":"no",
+        "items":
+        {
+            "Weapons":
+            {
+                "100": "Egg Propelled Launcher (Primary)",
+                "439": "Frying Pan (Melee)"
+            },
+            "Clothing":
+            {
+                "101": "Bunny Suit",
+                "1150": "Ski Mask",
+                "1151": "Bunny Nose"
+            },
+            "Other Items":
+            {
+                "588": "Goodie Bag",
+                "424": "Rabbit Foot"
+            }
+        }
+    }
+}

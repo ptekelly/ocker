@@ -1,0 +1,61 @@
+{
+  "mex": {
+    "realname": "Mexico",
+    "imagetag": "mexico",
+    "wikilink": "Mexico"
+  },
+  "cay": {
+    "realname": "Cayman Islands",
+    "imagetag": "cayman",
+    "wikilink": "Cayman_Islands",
+    "special": "Offshore Banking"
+  },
+  "can": {
+    "realname": "Canada",
+    "imagetag": "canada",
+    "wikilink": "Canada"
+  },
+  "haw": {
+    "realname": "Hawaii",
+    "imagetag": "hawaii",
+    "wikilink": "Hawaii"
+  },
+  "uni": {
+    "realname": "United Kingdom",
+    "imagetag": "uk",
+    "wikilink": "United_Kingdom"
+  },
+  "arg": {
+    "realname": "Argentina",
+    "imagetag": "argentina",
+    "wikilink": "Argentina"
+  },
+  "swi": {
+    "realname": "Switzerland",
+    "imagetag": "switzerland",
+    "wikilink": "Switzerland",
+    "special": "Rehabilitation"
+  },
+  "jap": {
+    "realname": "Japan",
+    "imagetag": "japan",
+    "wikilink": "Japan"
+  },
+  "chi": {
+    "realname": "China",
+    "imagetag": "china",
+    "wikilink": "China",
+    "special": "Fortune Teller"
+  },
+  "uae": {
+    "realname": "United Arab Emerites",
+    "imagetag": "uae",
+    "wikilink": "United_Arab_Emerites"
+  },
+  "sou": {
+    "realname": "South Africa",
+    "imagetag": "south_africa",
+    "wikilink": "South_Africa",
+    "special": "Hunting"
+  }
+}
