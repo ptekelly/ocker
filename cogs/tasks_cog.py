@@ -13,6 +13,7 @@ class Tasks_cog(commands.Cog):
 	npc_task_list = {}
 	channel_list = {}
 	channel_dict = {}
+	duke_dict = {}
 
 
 
@@ -22,6 +23,47 @@ class Tasks_cog(commands.Cog):
 		self.update_npc_file()
 		self.index = 0
 		self.printer.start()
+		self.duke_dict["status"] = "Offline"
+		self.duke_dict["dumped_count"] = self.get_duke_count_dump()
+		print(self.duke_dict["status"])
+		print(self.duke_dict["dumped_count"])
+
+
+
+	def get_duke_count_dump(self):
+	
+		ret_text = ""
+		v_apiSelection = "personalstats"
+		v_apiType = "user"
+		v_info = "itemsdumped"
+		v_torn_id = "4"
+		APIURL = self.bot.v_apiAddress+v_apiType+"/"+str(v_torn_id)+'?selections='+v_apiSelection+'&key='+self.bot.v_apiKey
+		r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+		v1 = r.json() # translates that response into a dict variable
+		if "error" in v1:
+			print(v1)
+			return "ERROR:SOMEERR" 
+			
+		selection = v1["personalstats"]
+		return selection[v_info]
+
+
+	def get_duke_status(self):
+	
+		ret_text = ""
+		v_apiSelection = "profile"
+		v_apiType = "user"
+		v_info = "status"
+		v_torn_id = "4"
+		APIURL = self.bot.v_apiAddress+v_apiType+"/"+str(v_torn_id)+'?selections='+v_apiSelection+'&key='+self.bot.v_apiKey
+		r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+		v1 = r.json() # translates that response into a dict variable
+		if "error" in v1:
+			print(v1)
+			return "ERROR:SOMEERR" 
+			
+		selection = v1["last_action"]
+		return selection[v_info]
 
 	
 
@@ -29,9 +71,9 @@ class Tasks_cog(commands.Cog):
 	def cog_unload(self):
 		self.printer.cancel()
 
-	@tasks.loop(seconds=10.0)
+	@tasks.loop(seconds=2.0)
 	async def printer(self):
-		if self.index == 180:
+		if self.index == 900:
 			print("Time to update npc data (30 mins).....")
 			self.update_npc_file()
 			print("Resetting index to 0")
@@ -40,6 +82,63 @@ class Tasks_cog(commands.Cog):
 			#print(self.index)
 			self.index += 1
 		await self.check_npc_data()
+
+		#await self.do_duke()		
+
+
+
+	async def do_duke(self):
+		newDukeStatus = self.get_duke_status()
+		#print("Duke is " + newDukeStatus)
+
+		if self.duke_dict["status"] != "Online":
+			if newDukeStatus == "Online":
+				print("Duke came online")
+
+				embed = discord.Embed(title="DUKE", 
+					colour=discord.Colour(0x5dd3fa),  
+					description= "Duke has come online")
+				embed.set_footer(text=self.duke_dict["dumped_count"])
+
+				
+				for guild in self.channel_list:
+					channel_id = self.channel_list[guild]
+					myguild = self.bot.get_guild(int(guild))
+					mychannel = self.bot.get_channel(channel_id)
+					lootrole = discord.utils.get(myguild.roles, name="DukePing")
+					await mychannel.send(lootrole.mention)
+					await mychannel.send(embed=embed)
+
+
+		self.duke_dict["status"] = newDukeStatus
+
+		if self.duke_dict["status"] == "Online":
+			newDukeDumpCount = self.get_duke_count_dump()
+			#print("Duke dumped items " + str(newDukeDumpCount))
+
+
+			if int(newDukeDumpCount) > int(self.duke_dict["dumped_count"]):
+				print("Duke dumped " + str(int(newDukeDumpCount) - int(self.duke_dict["dumped_count"])) + " items")
+				self.duke_dict["dumped_count"] = newDukeDumpCount
+
+				embed = discord.Embed(title="DUKE", 
+					colour=discord.Colour(0x5dd3fa),  
+					description= "Duke dumped " + str(int(newDukeDumpCount) - int(self.duke_dict["dumped_count"])) + " items")
+
+				
+				for guild in self.channel_list:
+					channel_id = self.channel_list[guild]
+					myguild = self.bot.get_guild(int(guild))
+					mychannel = self.bot.get_channel(channel_id)
+					lootrole = discord.utils.get(myguild.roles, name="DukePing")
+					await mychannel.send(lootrole.mention)
+					await mychannel.send(embed=embed)
+
+
+
+
+
+
 	
 
 	@printer.before_loop
@@ -96,7 +195,7 @@ class Tasks_cog(commands.Cog):
 
 		for npc in self.npc_task_list:
 			if datetime.fromtimestamp(self.npc_task_list[npc]["5minwarn"]) > now_time:
-				if datetime.fromtimestamp(self.npc_task_list[npc]["5minwarn"]) <= (now_time + timedelta(0,10)):
+				if datetime.fromtimestamp(self.npc_task_list[npc]["5minwarn"]) <= (now_time + timedelta(0,2)):
 					print(self.npc_task_list[npc]["name"] + " is now ready")
 					await self.alert(npc,datetime.fromtimestamp(self.npc_task_list[npc]["level4"]))
 					#self.update_npc_file()

@@ -318,7 +318,7 @@ class Profile_cog(commands.Cog):
 		trade_link   = "https://www.torn.com/trade.php#step=start&userID=" + torn_id
 		display_link = "https://www.torn.com/displaycase.php#display/" + torn_id
 		bazaar_link  = "https://www.torn.com/bazaar.php?userId=" + torn_id +"#/"
-		cash_link    = "https://www.torn.com/sendcash.php#/XID=" + torn_id
+		cash_link    = "https://www.torn.com/profiles.php?XID=" + torn_id
 		bounty_link  = "https://www.torn.com/bounties.php?p=add&XID=" + torn_id
 		attack_link  = "https://www.torn.com/loader2.php?sid=getInAttack&user2ID=" + torn_id
 		

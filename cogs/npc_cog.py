@@ -18,6 +18,7 @@ class Npc_cog(commands.Cog):
 #	bot = commands.Bot(command_prefix='!', case_insensitive=True)
 
 	#emojis = ['D','L','J','F','T'] - list of npcs
+#	emojis = {'\U0001f1e9':"duke",'\U0001f1f1':"leslie",'\U0001f1ef':"jimmy",'\U0001f1eb':"fernando",'\U0001f1f9':"tiny", '\U0001f1f8':"scrooge"}
 	emojis = {'\U0001f1e9':"duke",'\U0001f1f1':"leslie",'\U0001f1ef':"jimmy",'\U0001f1eb':"fernando",'\U0001f1f9':"tiny"}
 
 
@@ -383,9 +384,10 @@ class Npc_cog(commands.Cog):
 		colour=npc_embed_colour)
 
 		for npc in npc_dict:
-			if npc_dict[npc]["seasonal"] == "no":
+			if npc_dict[npc]["active"] == "yes":
 
 				#.strftime("%H:%M")
+				print(npc_hosp[npc])
 				hosp_out = datetime.utcfromtimestamp(npc_hosp[npc])
 				level1 = hosp_out + timedelta(0,60)
 				level2 = hosp_out + timedelta(0,(30*60))
@@ -535,6 +537,21 @@ class Npc_cog(commands.Cog):
 		  	await ctx.send(f"Added {role} to {user.mention}") 
 
 		return
+
+#	@commands.command(name='dukeping', aliases = ["pingduke"] ,help="Add the duke ping role (or remove it if you already have it")
+#	async def dukeping(self,ctx):
+#
+#		role = discord.utils.get(ctx.guild.roles, name="DukePing")
+#		user = ctx.author
+#
+#		if role in user.roles:
+#			await user.remove_roles(role) #removes the role if user already has
+#			await ctx.send(f"Removed {role} from {user.mention}")
+#		else:
+#		  	await user.add_roles(role) #adds role if not already has it
+#		  	await ctx.send(f"Added {role} to {user.mention}") 
+#
+#		return
 
 
 def setup(bot):

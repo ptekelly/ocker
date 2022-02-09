@@ -113,14 +113,16 @@ async def checkchannel(ctx):
 			
 				if server_id in channel_dict:
 					#print("Server id and file exist")
-					if this_channel_id == channel_dict[server_id]["main"] or this_channel_id == channel_dict[server_id]["mgt"]:
-						#print("This channel matches allowd channel")
-						channel_allowed = True
-						return channel_allowed
-					else:
-						#print("this is not allowed channel")
-						await ctx.message.delete()
-						return channel_allowed
+					for chan in channel_dict[server_id]:
+
+						if this_channel_id == channel_dict[server_id][chan]:
+							#print("This channel matches allowd channel")
+							channel_allowed = True
+							return channel_allowed
+					
+					#print("this is not allowed channel")
+					await ctx.message.delete()
+					return channel_allowed
 				else:
 					#print("Server id does not exist - but file does - therefore allowed to post")
 					channel_allowed = True
@@ -341,13 +343,20 @@ async def travel(ctx, *dest):
 
 			stocked_field = ""
 
-			for stocked in sorted(stock_list):
-				stocked_field = stocked_field + "***" + stocked + "*** (" + stock_list[stocked] + ")\n"
-			
-			no_stocked_field = ""
+			if len(stock_list) == 0:
+				stocked_field = "***No items in stock***"
+			else:
+				for stocked in sorted(stock_list):
+					stocked_field = stocked_field + "***" + stocked + "*** (" + stock_list[stocked] + ")\n"
+				
+				no_stocked_field = ""
 
-			for no_stocked in sorted(no_stock_list):
-				no_stocked_field = no_stocked_field + "***" + no_stocked + "*** (" + no_stock_list[no_stocked] + ")\n"
+			if len(no_stock_list) == 0:
+				no_stocked_field = "*** No items out of stock***"
+			else:
+
+				for no_stocked in sorted(no_stock_list):
+					no_stocked_field = no_stocked_field + "***" + no_stocked + "*** (" + no_stock_list[no_stocked] + ")\n"
 
 		else:
 			response = "Destination not found"		
@@ -357,6 +366,7 @@ async def travel(ctx, *dest):
 		special_text = ""
 		if "special" in dest_dict[lookup_dest_dict[dest.lower()]]:
 			special_text = ":sunny: Special: **" + dest_dict[lookup_dest_dict[dest.lower()]]["special"] + "**"
+
 
 
 		embed = discord.Embed(title=":airplane: Stock list for " + dest_dict[lookup_dest_dict[dest.lower()]]["realname"], 
@@ -774,13 +784,21 @@ async def oc_work(ctx, torn_id):
 		crime_title = crime_title + " (Ready)"
 	
 
+	description_text = description_text + "\n"
+
+	description_text = description_text + "**Participants**" + "\n"
+
+	description_text = description_text  + participants_list_text + "\n"
+
+
+
 	embed = discord.Embed(title = crime_title,
 		colour=crime_colour, 
 		url="https://www.torn.com/factions.php?step=your#/tab=crimes",
 		description=description_text
 		)
 
-	embed.add_field(name="Participants", value=participants_list_text,inline=False)
+#	embed.add_field(name="Participants", value=participants_list_text,inline=False)
 
 	embed.add_field(name="Time Started", value=datetime.utcfromtimestamp(currentcrimes[my_crime]["time_started"]).strftime("%H:%M (%d-%b)"),inline=True)
 	embed.add_field(name="Time Ready", value=datetime.utcfromtimestamp(currentcrimes[my_crime]["time_ready"]).strftime("%H:%M (%d-%b)"),inline=True)
@@ -949,6 +967,62 @@ async def oc_list(ctx):
 		await ctx.send(embed=embed)
 
 	return
+
+
+
+@bot.command(name='setlottochannel', hidden = True)
+async def setlottochannel(ctx, mychannel: discord.TextChannel = "NA"):
+	if mychannel == "NA":
+		await ctx.send("Channel not found: Please enter a valid text channel using #....")
+	server_id = str(ctx.guild.id)
+	if mychannel in ctx.guild.text_channels:
+
+		if os.path.isfile("./channels.json"):
+			# File already exists
+			with open("./channels.json","r") as inf:		
+				channel_dict = json.load(inf)
+				
+				if server_id in channel_dict:
+					channel_dict[server_id].update({"lottochnl": mychannel.id})
+				else:
+					channel_dict[server_id] = {"lottochnl": mychannel.id}
+			
+		else:
+		#	file does not exist - new dictionary
+			channel_dict = {server_id: {"lotto":mychannel.id}}
+
+		with open("./channels.json", "w") as data_file:
+			json.dump(channel_dict, data_file, indent=2)
+		await ctx.send(mychannel.name + ' is now set as the Ocker Bot lotto channel')
+	return
+
+
+@bot.command(name='setwarchannel', hidden = True)
+async def setwarchannel(ctx, mychannel: discord.TextChannel = "NA"):
+	if mychannel == "NA":
+		await ctx.send("Channel not found: Please enter a valid text channel using #....")
+	server_id = str(ctx.guild.id)
+	if mychannel in ctx.guild.text_channels:
+
+		if os.path.isfile("./channels.json"):
+			# File already exists
+			with open("./channels.json","r") as inf:		
+				channel_dict = json.load(inf)
+				
+				if server_id in channel_dict:
+					channel_dict[server_id].update({"warchnl": mychannel.id})
+				else:
+					channel_dict[server_id] = {"warchnl": mychannel.id}
+			
+		else:
+		#	file does not exist - new dictionary
+			channel_dict = {server_id: {"war":mychannel.id}}
+
+		with open("./channels.json", "w") as data_file:
+			json.dump(channel_dict, data_file, indent=2)
+		await ctx.send(mychannel.name + ' is now set as the Ocker Bot lotto channel')
+	return
+
 
 
 
@@ -1428,40 +1502,53 @@ async def itemid(ctx, item_id):
 	v_description = v1["description"]
 	response = v_name + ": " + v_description
 	await ctx.send(response)
+
+
+@bot.command(name='itemtype', aliases = ["it"], help='Responds with data for item id provided')
+async def itemtype(ctx,*, item_type):
 	
+	v_apiType = 'torn'
+	v_apiSelection = 'items'
+
+	APIURL = bot.v_apiAddress+v_apiType+'/?selections='+v_apiSelection+'&key='+bot.v_apiKey
+	response = APIURL
+
+	type_list = {}
+
+	r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+	data = r.json() # translates that response into a dict variable
+	selection = data["items"]
+
+	for item_id in selection:
+		if selection[item_id]["type"].lower() == item_type.lower():
+			type_list[item_id] = selection[item_id]["name"]
 
 
-@bot.command(name='removeid', aliases = ["remid"], hidden = True)
-async def removeid(ctx, tornid:int):
-	member = ctx.author
-	discord_id = str(member.id)
-	discord_name = member.name
-	discord_member = str(member)
-	discord_display_name = member.display_name
-	discord_avatar_url = str(member.avatar_url)
-	torn_id = tornid
-	torn_api = ""
+	if len(type_list) == 0:
+		await ctx.send("```No items with item type of '" + item_type + "'.```")
+		return
 
-	if os.path.isfile("./users.json"):
-		with open("./users.json","r") as inf:
-			#dict = eval(inf.read())
-			dict = json.load(inf)
-		if discord_id in dict:
-			response = "Torn ID Updated"
-			dict[discord_id].update({'torn_id' : str(torn_id)})
-		else:
-			response = "Torn ID Added"
-			dict[discord_id] = {'torn_id' : str(torn_id)}
-	else:
-		dict = {discord_id: {'torn_id' : str(torn_id)}}
-		response = "torn id added (new file)"
+	sortlist = sorted(type_list.items(), key=lambda x:x[1])
+	sortlist = dict(sortlist)
+	
+	title = "Items of type: " + item_type
+	
+	description = ""
+	for item_id in sortlist:
+		description = description + sortlist[item_id] + "\n"
+	
+	footer = "Total items: " + str(len(type_list))
 
-	with open("./users.json", "w") as data_file:
-				json.dump(dict, data_file, indent=2)
+	embed = discord.Embed(title=title,
+	description = description, 
+	colour=discord.Colour(0x5dd3fa))
 
-	await ctx.send(response)
+	embed.set_footer(text=footer)
 
 
+	await ctx.send(embed = embed)
+	
+	return		
 
 
 @bot.command(name='checkuser', aliases = ["chk", "ch", "cu"], help='Check on user setup')
@@ -1543,6 +1630,9 @@ async def checkuser(ctx, member: typing.Union[discord.Member,str] = "NA"):
 
 
 	return
+
+
+
 
 
 
@@ -1911,151 +2001,7 @@ def getdictfromfile(dictfile):
 	return(response)
 
 
-@bot.command(name='workstats', aliases=['ws'], help='Responds with Work Stats.  Requires Torn ID and Torn API registered.')
-async def workstats(ctx, member: discord.Member = "NA"):
-	readonly = True
-	countstattype = 0
-	now = datetime.now()
 
-	if member == "NA":
-		member = ctx.author
-	if member == ctx.author:
-		readonly = False
-
-	
-	discord_id = str(member.id)
-	torn_id = ""
-	torn_api = ""
-
-	v_apiSelection = "workstats"
-	v_apiType = "user"
-
-
-	if readonly:
-		if os.path.isfile("./workstats.json"):
-			with open("./workstats.json","r") as inf:
-				#statdict = eval(inf.read())
-				statdict = json.load(inf)
-
-			if discord_id in statdict:
-
-				v_ro_manuallabor  = statdict[discord_id]["manuallabor"]
-				v_ro_intelligence = statdict[discord_id]["intelligence"]
-				v_ro_endurance    = statdict[discord_id]["endurance"]
-				v_ro_timestamp    = statdict[discord_id]["timestamp"]
-				torntime          = datetime.utcfromtimestamp(v_ro_timestamp).strftime("%H:%M:%S %d %B %Y")
-
-				maxl = 15
-				maxe = 16 + maxl
-				response = (">>> ```" +
-					"\n" + ("{:<16s}").format("Manual Labor:")     + ("{:"+str(maxl)+",d}").format(v_ro_manuallabor)      +
-					"\n" + ("{:<16s}").format("Intelligence:")     + ("{:"+str(maxl)+",d}").format(v_ro_intelligence)     +
-					"\n" + ("{:<16s}").format("Endurance:")        + ("{:"+str(maxl)+",d}").format(v_ro_endurance)        +
-					"```")
-				await ctx.send(response)
-				response = (">>> ```" +
-					"\n" + "This is the stored work stats for this user" +
-					"\n" + "Last updated: " + torntime + "```")
-				
-				await ctx.send(response)
-				return
-			else:
-				response = "No stored work stats for this user"
-				await ctx.send(response)
-				return
-		else:
-			#no file but we don't care - just returning no stats for user
-			response = "No stored work stats for this user"
-			await ctx.send(response)
-			return
-	else:
-
-		torn_id = await get_user_data(member,"torn_id")
-		torn_api = await get_user_data(member, "torn_api")
-		timestamp = datetime.timestamp(now)
-
-		APIURL = bot.v_apiAddress+v_apiType+'/'+'?selections='+v_apiSelection+'&key='+torn_api
-		r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
-		v1 = r.json() # translates that response into a dict variable
-		if "error" in v1:
-			raise APIIssue("workstats")
-		else:
-			v_manuallabor = v1["manual_labor"]
-			v_intelligence = v1["intelligence"]
-			v_endurance = v1["endurance"]
-			maxl = 15
-			maxe = 16 + maxl
-			response = (">>> ```" +
-				"\n" + ("{:<16s}").format("Manual Labor:")  + ("{:"+str(maxl)+",d}").format(v_manuallabor)  +
-				"\n" + ("{:<16s}").format("Intelligence:")  + ("{:"+str(maxl)+",d}").format(v_intelligence) +
-				"\n" + ("{:<16s}").format("Endurance:") 	+ ("{:"+str(maxl)+",d}").format(v_endurance) 	+
-				"```")
-			await ctx.send(response)
-			if os.path.isfile("./workstats.json"):
-				with open("./workstats.json","r") as inf:
-					#statdict = eval(inf.read())
-					statdict = json.load(inf)
-
-				if discord_id in statdict:
-
-
-					v_old_manuallabor  = statdict[discord_id]["manuallabor"]
-					v_old_intelligence = statdict[discord_id]["intelligence"]
-					v_old_endurance    = statdict[discord_id]["endurance"]
-					v_old_timestamp    = statdict[discord_id]["timestamp"]
-					torntime           = datetime.utcfromtimestamp(v_old_timestamp).strftime("%H:%M:%S %d %B %Y")
-
-
-					v_diff_manuallabor  = int(v_manuallabor)  - int(v_old_manuallabor)
-					v_diff_intelligence = int(v_intelligence) - int(v_old_intelligence)
-					v_diff_endurance    = int(v_endurance)    - int(v_old_endurance)
-					
-					v_diff_manuallabor_pc  = v_diff_manuallabor  / v_old_manuallabor
-					v_diff_intelligence_pc = v_diff_intelligence / v_old_intelligence
-					v_diff_endurance_pc    = v_diff_endurance    / v_old_endurance
-					v_diff_total           = v_diff_manuallabor + v_diff_intelligence + v_diff_endurance
-
-					
-					if v_diff_total == 0:
-						response = "> ```No change since last update (" + torntime + ")```"
-						await ctx.send(response)
-						return
-					else:
-						response = ">>> ```"
-						if v_diff_manuallabor > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" + "Manual Labor increased by " + "{:,d}".format(v_diff_manuallabor) + " points (" + "{:.2%}".format(v_diff_manuallabor_pc) + ")"
-						if v_diff_intelligence > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" +"Intelligence increased by " + "{:,d}".format(v_diff_intelligence) + " points (" + "{:.2%}".format(v_diff_intelligence_pc) + ")"
-						if v_diff_endurance > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" + "Endurance increased by " + "{:,d}".format(v_diff_endurance) + " points (" + "{:.2%}".format(v_diff_endurance_pc) + ")"
-							
-						response = response + "\n" + "Last updated: " + torntime + "```"
-						await ctx.send(response)
-				
-					#user exists so we update
-					statdict[discord_id].update({'manuallabor' : v_manuallabor, 'intelligence' : v_intelligence, 'endurance' : v_endurance, 'timestamp' : timestamp})
-				else:
-					#user doesn't exist so we create user
-					statdict[discord_id] = {'manuallabor' : v_manuallabor, 'intelligence' : v_intelligence, 'endurance' : v_endurance, 'timestamp' : timestamp}
-			else:
-				#file doesn't exist so we create it
-				statdict = {discord_id: {'manuallabor' : v_manuallabor, 'intelligence' : v_intelligence, 'endurance' : v_endurance, 'timestamp' : timestamp}}
-				
-			with open("./workstats.json", "w") as data_file:
-				json.dump(statdict, data_file, indent=2)
-			
-			#json1 = json.dumps(statdict)
-			#f = open("./workstats.json","w")
-			#f.write(json1)
-			#f.close()
-
-			response = "Work Stats updated!"
-			await ctx.send(response)
-
-	return
 
 @bot.command(name='stats', aliases=['s'], help='Responds with Stats. Requires Torn ID and Torn API registered.')
 async def stats(ctx, member: discord.Member = "NA"):
@@ -2075,9 +2021,15 @@ async def stats(ctx, member: discord.Member = "NA"):
 	torn_id = ""
 	torn_api = ""
 
-	v_apiSelection = "battlestats"
-	v_apiType = "user"
+	title = "Stats for " + member.display_name
 
+	bs_field_title = "bs_field_title not set"
+	bs_field_value = "bs_field_value not set"
+
+	ws_field_title = "ws_field_title not set"
+	ws_field_value = "ws_field_value not set"
+
+	footer = "footer not set"
 
 	if readonly:
 		if os.path.isfile("./stats.json"):
@@ -2085,40 +2037,59 @@ async def stats(ctx, member: discord.Member = "NA"):
 				#statdict = eval(inf.read())
 				statdict = json.load(inf)
 
+
 			if discord_id in statdict:
 
-				v_ro_strength = statdict[discord_id]["strength"]
-				v_ro_speed = statdict[discord_id]["speed"]
-				v_ro_dexterity = statdict[discord_id]["dexterity"]
-				v_ro_defense = statdict[discord_id]["defense"]
-				v_ro_total = statdict[discord_id]["total"]
-				v_ro_timestamp = statdict[discord_id]["timestamp"]
+				v_ro_strength = statdict[discord_id].get("strength",0)
+				v_ro_speed = statdict[discord_id].get("speed",0)
+				v_ro_dexterity = statdict[discord_id].get("dexterity",0)
+				v_ro_defense = statdict[discord_id].get("defense",0)
+				v_ro_total = statdict[discord_id].get("total",0)
+
+				v_ro_manuallabor  = statdict[discord_id].get("manuallabor",0)
+				v_ro_intelligence = statdict[discord_id].get("intelligence",0)
+				v_ro_endurance    = statdict[discord_id].get("endurance",0)
+
+
+				v_ro_timestamp = statdict[discord_id].get("timestamp",0)
+
+
 				torntime = datetime.utcfromtimestamp(v_ro_timestamp).strftime("%H:%M:%S %d %B %Y")
 
 				maxl = len(format(v_ro_total,',d')) + 15
 				maxe = 16 + maxl
-				response = (">>> ```" +
+				bs_field_title = "Stored Battle Stats"
+				bs_field_value = (" ```" +
 					"\n" + ("{:<16s}").format("Strength:")  + ("{:"+str(maxl)+",d}").format(v_ro_strength)  +
 					"\n" + ("{:<16s}").format("Speed:")     + ("{:"+str(maxl)+",d}").format(v_ro_speed)     +
 					"\n" + ("{:<16s}").format("Dexterity:") + ("{:"+str(maxl)+",d}").format(v_ro_dexterity) +
 					"\n" + ("{:<16s}").format("Defense:")   + ("{:"+str(maxl)+",d}").format(v_ro_defense)   +
-					"\n" + "=" * maxe +
+					"\n" + 
 					"\n" + ("{:<16s}").format("Total:")   + ("{:"+str(maxl)+",d}").format(v_ro_total)       +
 					"```")
-				await ctx.send(response)
-				response = (">>> ```" +
-					"\n" + "This is the stored stats for this user" +
-					"\n" + "Last updated: " + torntime + "```")
 				
-				await ctx.send(response)
-				return
+
+				maxl = 15
+				maxe = 16 + maxl
+				
+				ws_field_title = "Stored Work Stats"
+				ws_field_value = (" ```" +
+					"\n" + ("{:<16s}").format("Manual Labor:")  + ("{:"+str(maxl)+",d}").format(v_ro_manuallabor)  +
+					"\n" + ("{:<16s}").format("Intelligence:")  + ("{:"+str(maxl)+",d}").format(v_ro_intelligence) +
+					"\n" + ("{:<16s}").format("Endurance:") 	+ ("{:"+str(maxl)+",d}").format(v_ro_endurance) 	+
+					"```")
+
+				footer = "This is the stored stats for this user" 
+				footer = footer + "\n" + "Last updated:  " + torntime 
+
+
 			else:
-				response = "No stored stats for this user"
+				response = "```No stored stats for this user```"
 				await ctx.send(response)
 				return
 		else:
 			#file is missing - we don't care
-			response = "No stored stats for this user"
+			response = "```No stored stats for this user```"
 			await ctx.send(response)
 			return
 	else:
@@ -2127,106 +2098,511 @@ async def stats(ctx, member: discord.Member = "NA"):
 		torn_api = await get_user_data(member, "torn_api")
 		timestamp = datetime.timestamp(now)
 
+		v_apiSelection = "battlestats"
+		v_apiType = "user"
+
 		APIURL = bot.v_apiAddress+v_apiType+'/'+'?selections='+v_apiSelection+'&key='+torn_api
 		r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
 		v1 = r.json() # translates that response into a dict variable
 		if "error" in v1:
 			raise APIIssue("stats")
-		else:
-			v_strength = v1["strength"]
-			v_speed = v1["speed"]
-			v_dexterity = v1["dexterity"]
-			v_defense = v1["defense"]
-			v_total = v1["total"]
-			maxl = len(format(v_total,',d')) + 15
-			maxe = 16 + maxl
-			response = (">>> ```" +
-				"\n" + ("{:<16s}").format("Strength:")  + ("{:"+str(maxl)+",d}").format(v_strength)  +
-				"\n" + ("{:<16s}").format("Speed:")     + ("{:"+str(maxl)+",d}").format(v_speed)     +
-				"\n" + ("{:<16s}").format("Dexterity:") + ("{:"+str(maxl)+",d}").format(v_dexterity) +
-				"\n" + ("{:<16s}").format("Defense:")   + ("{:"+str(maxl)+",d}").format(v_defense)   +
-				"\n" + "=" * maxe +
-				"\n" + ("{:<16s}").format("Total:")   + ("{:"+str(maxl)+",d}").format(v_total)       +
-				"```")
-			await ctx.send(response)
-			if os.path.isfile("./stats.json"):
-				with open("./stats.json","r") as inf:
-					#statdict = eval(inf.read())
-					statdict = json.load(inf)
+			return
 
-				if discord_id in statdict:
+		v_strength = v1["strength"]
+		v_speed = v1["speed"]
+		v_dexterity = v1["dexterity"]
+		v_defense = v1["defense"]
+		v_bs_total = v1["total"]
+
+		v_apiSelection = "workstats"
+		v_apiType = "user"
+
+		APIURL = bot.v_apiAddress+v_apiType+'/'+'?selections='+v_apiSelection+'&key='+torn_api
+		r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+		v2 = r.json() # translates that response into a dict variable
+
+		if "error" in v2:
+			raise APIIssue("workstats")
+			return
+		
+		v_manuallabor = v2["manual_labor"]
+		v_intelligence = v2["intelligence"]
+		v_endurance = v2["endurance"]
+
+		title = "Stats for " + member.display_name + " (New user)"
+
+		maxl = len(format(v_bs_total,',d')) + 15
+		maxe = 16 + maxl
+		
+		bs_field_title = "Current Battle Stats"
+		bs_field_value = (" ```" +
+			"\n" + ("{:<16s}").format("Strength:")  + ("{:"+str(maxl)+",d}").format(v_strength)  +
+			"\n" + ("{:<16s}").format("Speed:")     + ("{:"+str(maxl)+",d}").format(v_speed)     +
+			"\n" + ("{:<16s}").format("Dexterity:") + ("{:"+str(maxl)+",d}").format(v_dexterity) +
+			"\n" + ("{:<16s}").format("Defense:")   + ("{:"+str(maxl)+",d}").format(v_defense)   +
+			"\n" +
+			#"\n" + "=" * maxe +
+			"\n" + ("{:<16s}").format("Total:")   + ("{:"+str(maxl)+",d}").format(v_bs_total)       +
+			"```")
+
+		maxl = 15
+		maxe = 16 + maxl
+		
+		ws_field_title = "Current Work Stats"
+		ws_field_value = (" ```" +
+			"\n" + ("{:<16s}").format("Manual Labor:")  + ("{:"+str(maxl)+",d}").format(v_manuallabor)  +
+			"\n" + ("{:<16s}").format("Intelligence:")  + ("{:"+str(maxl)+",d}").format(v_intelligence) +
+			"\n" + ("{:<16s}").format("Endurance:") 	+ ("{:"+str(maxl)+",d}").format(v_endurance) 	+
+			"```")
+
+		footer = "First Stats - Welcome"
+		footer = footer + "\n" + "Stats Updated"
 
 
-					v_old_strength = statdict[discord_id]["strength"]
-					v_old_speed = statdict[discord_id]["speed"]
-					v_old_dexterity = statdict[discord_id]["dexterity"]
-					v_old_defense = statdict[discord_id]["defense"]
-					v_old_total = statdict[discord_id]["total"]
-					v_old_timestamp = statdict[discord_id]["timestamp"]
-					v_old_timestamp = statdict[discord_id]["timestamp"]
-					torntime = datetime.utcfromtimestamp(v_old_timestamp).strftime("%H:%M:%S %d %B %Y")
+
+		if os.path.isfile("./stats.json"):
+			with open("./stats.json","r") as inf:
+				statdict = json.load(inf)
+
+			if discord_id in statdict:
+
+				v_old_strength = statdict[discord_id].get("strength",0)
+				v_old_speed = statdict[discord_id].get("speed",0)
+				v_old_dexterity = statdict[discord_id].get("dexterity",0)
+				v_old_defense = statdict[discord_id].get("defense",0)
+				v_old_bs_total = statdict[discord_id].get("total",0)
+				v_old_timestamp = statdict[discord_id].get("timestamp",0)
+
+				v_old_manuallabor  = statdict[discord_id].get("manuallabor",0)
+				v_old_intelligence = statdict[discord_id].get("intelligence",0)
+				v_old_endurance    = statdict[discord_id].get("endurance",0)
 
 
-					v_diff_strength = int(v_strength) - int(v_old_strength)
-					v_diff_speed = int(v_speed) - int(v_old_speed)
-					v_diff_dexterity = int(v_dexterity) - int(v_old_dexterity)
-					v_diff_defense = int(v_defense) - int(v_old_defense)
-					v_diff_total = int(v_total) - int(v_old_total)
-
-					v_diff_strength_pc = v_diff_strength / v_old_strength
-					v_diff_speed_pc = v_diff_speed / v_old_speed
-					v_diff_dexterity_pc = v_diff_dexterity / v_old_dexterity
-					v_diff_defense_pc = v_diff_defense / v_old_defense
-					v_diff_total_pc = v_diff_total / v_old_total
+				torntime = datetime.utcfromtimestamp(v_old_timestamp).strftime("%H:%M:%S %d %B %Y")
 
 
-					
-					if v_diff_total == 0:
-						response = "> ```No change since last update (" + torntime + ")```"
-						await ctx.send(response)
-						return
-					else:
-						response = ">>> ```"
-						if v_diff_strength > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" + "Strength increased by " + "{:,d}".format(v_diff_strength) + " points (" + "{:.2%}".format(v_diff_strength_pc) + ")"
-						if v_diff_speed > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" +"Speed increased by " + "{:,d}".format(v_diff_speed) + " points (" + "{:.2%}".format(v_diff_speed_pc) + ")"
-						if v_diff_dexterity > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" + "Dexterity increased by " + "{:,d}".format(v_diff_dexterity) + " points (" + "{:.2%}".format(v_diff_dexterity_pc) + ")"
-						if v_diff_defense > 0:
-							countstattype = countstattype + 1
-							response = response + "\n" +"Defense increased by " + "{:,d}".format(v_diff_defense) + " points (" + "{:.2%}".format(v_diff_defense_pc) + ")"
-						if v_diff_total > 0:
-							if countstattype > 1:
-								response = response + "\n" +"Total increased by " + "{:,d}".format(v_diff_total) + " points (" + "{:.2%}".format(v_diff_total_pc) + ")"
-							
-						response = response + "\n" + "Last updated: " + torntime + "```"
-						await ctx.send(response)
+				v_diff_strength = int(v_strength) - int(v_old_strength)
+				v_diff_speed = int(v_speed) - int(v_old_speed)
+				v_diff_dexterity = int(v_dexterity) - int(v_old_dexterity)
+				v_diff_defense = int(v_defense) - int(v_old_defense)
+				v_diff_bs_total = int(v_bs_total) - int(v_old_bs_total)
+
+				v_diff_strength_pc = v_diff_strength / v_old_strength
+				v_diff_speed_pc = v_diff_speed / v_old_speed
+				v_diff_dexterity_pc = v_diff_dexterity / v_old_dexterity
+				v_diff_defense_pc = v_diff_defense / v_old_defense
+				v_diff_bs_total_pc = v_diff_bs_total / v_old_bs_total
+
+
+				v_diff_manuallabor  = int(v_manuallabor)  - int(v_old_manuallabor)
+				v_diff_intelligence = int(v_intelligence) - int(v_old_intelligence)
+				v_diff_endurance    = int(v_endurance)    - int(v_old_endurance)
 				
-
-
-
-					statdict[discord_id].update({'strength' : v_strength, 'speed' : v_speed, 'dexterity' : v_dexterity, 'defense' : v_defense, 'total' : v_total, 'timestamp' : timestamp})
+				if v_old_manuallabor == 0:
+					v_diff_manuallabor_pc = 0
 				else:
-					statdict[discord_id] = {'strength' : v_strength, 'speed' : v_speed, 'dexterity' : v_dexterity, 'defense' : v_defense, 'total' : v_total, 'timestamp' : timestamp}
-			else:
-				statdict = {discord_id: {'strength' : v_strength, 'speed' : v_speed, 'dexterity' : v_dexterity, 'defense' : v_defense, 'total' : v_total, 'timestamp' : timestamp}}
+					v_diff_manuallabor_pc  = v_diff_manuallabor  / v_old_manuallabor
 				
-			with open("./stats.json", "w") as data_file:
-				json.dump(statdict, data_file, indent=2)
+				if v_old_intelligence == 0:
+					v_diff_intelligence_pc = 0
+				else:
+					v_diff_intelligence_pc = v_diff_intelligence / v_old_intelligence
 
-			#json1 = json.dumps(statdict)
-			#f = open("./stats.json","w")
-			#f.write(json1)
-			#f.close()
+				if v_old_endurance == 0:
+					v_diff_endurance_pc = 0
+				else:
+					v_diff_endurance_pc    = v_diff_endurance    / v_old_endurance
+	
+				v_diff_ws_total        = v_diff_manuallabor + v_diff_intelligence + v_diff_endurance
 
-			response = "Stats updated!"
-			await ctx.send(response)
+				
+				if v_diff_bs_total == 0 and v_diff_ws_total == 0:
+					title = "Stats for " + member.display_name + " (No change)"
+
+					bs_field_title = "Current Battle Stats"
+					ws_field_title = "Current Work Stats"
+
+					footer = "No changes since " + torntime
+					footer = footer + "\n" + "Stats Updated"
+
+				else:
+					title = "Changes to Stats for " + member.display_name
+
+					bs_field_title = "Old Battle Stats --->  New Battle Stats"
+					
+
+					maxl = len(format(v_old_bs_total,',d'))
+					maxe = 1
+
+					bs_field_value = " ```"
+							
+					line = ("{:<3s}").format("Str: ") + ("{:" + str(maxl) + ",d}").format(v_old_strength) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_strength) + " (" + "{:.2%}".format(v_diff_strength_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					bs_field_value = bs_field_value + line
+					
+					line = ("{:<3s}").format("Spd: ") + ("{:"+str(maxl)+",d}").format(v_old_speed) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_speed) + " (" + "{:.2%}".format(v_diff_speed_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					bs_field_value = bs_field_value + line
+					
+					line = ("{:<3s}").format("Dex: ") + ("{:"+str(maxl)+",d}").format(v_old_dexterity) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_dexterity) + " (" + "{:.2%}".format(v_diff_dexterity_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					bs_field_value = bs_field_value + line
+					
+					line = ("{:<3s}").format("Def: ") + ("{:"+str(maxl)+",d}").format(v_old_defense) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_defense) + " (" + "{:.2%}".format(v_diff_defense_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					bs_field_value = bs_field_value + line
+
+					totalline = ("{:<3s}").format("Tot: ") + ("{:"+str(maxl)+",d}").format(v_old_bs_total) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_bs_total) + " (" + "{:.2%}".format(v_diff_bs_total_pc) + ")" + "\n"
+					maxe = max(maxe,len(totalline))
+
+					bs_field_value = bs_field_value + "\n"
+
+					bs_field_value = bs_field_value + totalline
+
+					bs_field_value = bs_field_value + "```"
+
+
+					ws_field_title = "Old Work Stats --->  New Work Stats"
+					
+
+					maxl = 10
+					maxe = 1
+
+					ws_field_value = " ```"
+							
+					line = ("{:<3s}").format("Lab: ") + ("{:" + str(maxl) + ",d}").format(v_old_manuallabor) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_manuallabor) + " (" + "{:.2%}".format(v_diff_manuallabor_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					ws_field_value = ws_field_value + line
+
+
+					line = ("{:<3s}").format("Int: ") + ("{:" + str(maxl) + ",d}").format(v_old_intelligence) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_intelligence) + " (" + "{:.2%}".format(v_diff_intelligence_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					ws_field_value = ws_field_value + line
+
+
+					line = ("{:<3s}").format("End: ") + ("{:" + str(maxl) + ",d}").format(v_old_endurance) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_endurance) + " (" + "{:.2%}".format(v_diff_endurance_pc) + ")" + "\n"
+					maxe = max(maxe,len(line))
+					ws_field_value = ws_field_value + line
+
+					ws_field_value = ws_field_value + "```"
+
+
+					footer = "Changes since: " + torntime 
+					footer = footer + "\n" + "Stats Updated"
+
+
+				statdict[discord_id].update({'strength' : v_strength, 'speed' : v_speed, 'dexterity' : v_dexterity, 'defense' : v_defense, 'total' : v_bs_total, 'manuallabor' : v_manuallabor, 'intelligence' : v_intelligence, 'endurance' : v_endurance, 'timestamp' : timestamp})
+			else:
+				statdict[discord_id] = {'strength' : v_strength, 'speed' : v_speed, 'dexterity' : v_dexterity, 'defense' : v_defense, 'total' : v_bs_total, 'manuallabor' : v_manuallabor, 'intelligence' : v_intelligence, 'endurance' : v_endurance, 'timestamp' : timestamp}
+		else:
+			statdict = {discord_id: {'strength' : v_strength, 'speed' : v_speed, 'dexterity' : v_dexterity, 'defense' : v_defense, 'total' : v_bs_total, 'manuallabor' : v_manuallabor, 'intelligence' : v_intelligence, 'endurance' : v_endurance, 'timestamp' : timestamp}}
+
+		with open("./stats.json", "w") as data_file:
+			json.dump(statdict, data_file, indent=2)
+
+
+	embed = discord.Embed(title=title, 
+		colour=discord.Colour(0x5dd3fa), 
+		url="https://www.torn.com/profiles.php?XID="+str(torn_id),
+		description = "")
+	embed.add_field(name=bs_field_title, value=bs_field_value, inline = False)
+	embed.add_field(name=ws_field_title, value=ws_field_value, inline = False)
+		
+	embed.set_thumbnail(url=member.avatar_url)
+	
+	embed.set_footer(text=footer)
+
+	await ctx.send(embed=embed)
 
 	return
+
+
+@bot.command(name='fullstats', aliases=['fs'], help='Responds with Full Stats. Requires Torn ID and Torn API registered.')
+async def fullstats(ctx, member: discord.Member = "NA"):
+	print(ctx.invoked_with)
+
+	
+	if member == "NA":
+		member = ctx.author
+
+	
+	discord_id = str(member.id)
+	torn_id = ""
+	torn_api = ""
+
+	v_apiSelection = "battlestats"
+	v_apiType = "user"
+
+
+	torn_id = await get_user_data(member, "torn_id")
+	torn_api = await get_user_data(member, "torn_api")
+
+	discord_name = member.display_name
+
+	#timestamp = datetime.timestamp(now)
+
+	APIURL = bot.v_apiAddress+v_apiType+'/'+'?selections='+v_apiSelection+'&key='+torn_api
+	r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+	v1 = r.json() # translates that response into a dict variable
+	if "error" in v1:
+		raise APIIssue("fullstats")
+		return
+
+
+	v_strength = v1["strength"]
+	v_speed = v1["speed"]
+	v_dexterity = v1["dexterity"]
+	v_defense = v1["defense"]
+	v_total = v1["total"]
+
+	v_strength_modifier = v1["strength_modifier"]
+	v_speed_modifier = v1["speed_modifier"]
+	v_dexterity_modifier = v1["dexterity_modifier"]
+	v_defense_modifier = v1["defense_modifier"]
+
+	v_strength_info = v1["strength_info"]
+	v_speed_info = v1["speed_info"]
+	v_dexterity_info = v1["dexterity_info"]
+	v_defense_info = v1["defense_info"]
+
+	v_strength_effective = v_strength + int(v_strength * v_strength_modifier / 100)
+	v_speed_effective = v_speed + int(v_speed * v_speed_modifier / 100)
+	v_dexterity_effective = v_dexterity + int(v_dexterity * v_dexterity_modifier / 100)
+	v_defense_effective = v_defense + int(v_defense * v_defense_modifier / 100)
+	v_total_effective = v_strength_effective + v_speed_effective + v_dexterity_effective + v_defense_effective
+
+
+	maxl = len(format(v_total,',d')) + 10
+	maxe = 16 + maxl
+	description = ""
+
+
+	title = "Total Battle Stats for " + discord_name
+
+
+	base_field_title = "Base Battle Stats"
+	base_field_value = ("```" + 
+		"\n" + ("{:<16s}").format("Strength:")  + ("{:"+str(maxl)+",d}").format(v_strength)  +
+		"\n" + ("{:<16s}").format("Speed:")     + ("{:"+str(maxl)+",d}").format(v_speed)     +
+		"\n" + ("{:<16s}").format("Dexterity:") + ("{:"+str(maxl)+",d}").format(v_dexterity) +
+		"\n" + ("{:<16s}").format("Defense:")   + ("{:"+str(maxl)+",d}").format(v_defense)   +
+		"\n" +
+		#"\n" + "=" * maxe +
+		"\n" + ("{:<16s}").format("Total:")   + ("{:"+str(maxl)+",d}").format(v_total)       +
+		"```")
+
+
+	effective_field_title = "Effective Battle Stats"
+	effective_field_value = ("```" + 
+		("{:<16s}").format("Strength:")  + ("{:"+str(maxl)+",d}").format(v_strength_effective)  + " ({:,d}".format(v_strength_modifier) + "%)" + 
+		"\n" + ("{:<16s}").format("Speed:")     + ("{:"+str(maxl)+",d}").format(v_speed_effective)     + " ({:,d}".format(v_speed_modifier) + "%)" + 
+		"\n" + ("{:<16s}").format("Dexterity:") + ("{:"+str(maxl)+",d}").format(v_dexterity_effective) + " ({:,d}".format(v_dexterity_modifier) + "%)" + 
+		"\n" + ("{:<16s}").format("Defense:")   + ("{:"+str(maxl)+",d}").format(v_defense_effective)   + " ({:,d}".format(v_defense_modifier) + "%)" + 
+		"\n" +
+		#"\n" + "=" * maxe +
+		"\n" + ("{:<16s}").format("Total:")   + ("{:"+str(maxl)+",d}").format(v_total_effective)       +
+		"```")
+
+
+
+	strength_field_title = "Strength Modifier: {:,d}".format(v_strength_modifier) + "%"
+	speed_field_title = "Speed Modifier: {:,d}".format(v_speed_modifier) + "%"
+	dexterity_field_title = "Dexterity Modifier: {:,d}".format(v_dexterity_modifier) + "%"
+	defense_field_title = "Defense Modifier: {:,d}".format(v_defense_modifier) + "%"
+
+	strength_field_value = ""
+	speed_field_value = ""
+	dexterity_field_value = ""
+	defense_field_value = ""
+
+	for info in v_strength_info:
+		info = info.replace(" to Strength ", " ")
+		strength_field_value = strength_field_value + info + "\n"
+
+	for info in v_speed_info:
+		info = info.replace(" to Speed ", " ")
+		speed_field_value = speed_field_value + info + "\n"
+
+	for info in v_dexterity_info:
+		info = info.replace(" to Dexterity ", " ")
+		dexterity_field_value = dexterity_field_value + info + "\n"
+
+	for info in v_defense_info:
+		info = info.replace(" to Defense ", " ")
+		defense_field_value = defense_field_value + info + "\n"
+
+	
+	embed = discord.Embed(title=title, 
+		colour=discord.Colour(0x5dd3fa), 
+		url="https://www.torn.com/profiles.php?XID="+str(torn_id),
+		description = description)
+	embed.set_thumbnail(url=member.avatar_url)
+	embed.add_field(name=base_field_title, value=base_field_value, inline = False)
+	embed.add_field(name=effective_field_title, value=effective_field_value, inline = False)
+	embed.add_field(name=strength_field_title, value=strength_field_value, inline = True)
+	embed.add_field(name=speed_field_title, value=speed_field_value, inline = True)
+	embed.add_field(name='\u200B',value='\u200B', inline = True)
+	embed.add_field(name=dexterity_field_title, value=dexterity_field_value, inline = True)
+	embed.add_field(name=defense_field_title, value=defense_field_value, inline = True)
+	embed.add_field(name='\u200B',value='\u200B', inline = True)
+
+
+	await ctx.send(embed=embed)
+
+	return
+
+
+@bot.command(name='stathistory', aliases=['sh','stath'], help='Responds with Stats vs historic value. Requires Torn ID and Torn API registered.')
+async def stathistory(ctx, numberofdays: int = 0, member: discord.Member = "NA"):
+	if numberofdays == 0:
+		await ctx.send("```Provide a number of days as an integer you want to see history of battle stats```")
+		return
+	countstattype = 0
+	checkdate = datetime.now() - timedelta(days=numberofdays)
+	timestamp = datetime.timestamp(checkdate)
+	
+	if member == "NA":
+		member = ctx.author
+	
+	discord_id = str(member.id)
+	torn_id = ""
+	torn_api = ""
+
+	torn_id = await get_user_data(member, "torn_id")
+	torn_api = await get_user_data(member, "torn_api")
+
+	v_apiSelection = "battlestats"
+	v_apiType = "user"
+
+	APIURL = bot.v_apiAddress+v_apiType+'/'+'?selections='+v_apiSelection+'&key='+torn_api
+	r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+	v1 = r.json() # translates that response into a dict variable
+	if "error" in v1:
+		raise APIIssue("stathistory")
+		return
+
+	v_strength = v1["strength"]
+	v_speed = v1["speed"]
+	v_dexterity = v1["dexterity"]
+	v_defense = v1["defense"]
+	v_total = v1["total"]
+
+
+	v_apiSelection = "personalstats"
+	v_apiType = "user"
+
+	APIURL = bot.v_apiAddress+v_apiType+'/'+'?selections='+v_apiSelection+'&timestamp='+str(timestamp) +'&key='+torn_api
+	r = requests.get(APIURL) # queries "apiurl" and returns response from Torn
+	v1 = r.json() # translates that response into a dict variable
+	if "error" in v1:
+		raise APIIssue("stathistory")
+		return
+
+	v2 = v1["personalstats"]
+	v_old_strength = v2["strength"]
+	v_old_speed = v2["speed"]
+	v_old_dexterity = v2["dexterity"]
+	v_old_defense = v2["defense"]
+	v_old_total = v2["totalstats"]
+
+
+
+	maxl = len(format(v_total,',d')) + 15
+	maxe = 16 + maxl
+
+
+	v_old_timestamp = timestamp
+	torntime = datetime.utcfromtimestamp(v_old_timestamp).strftime("%d %B %Y")
+
+
+	v_diff_strength = int(v_strength) - int(v_old_strength)
+	v_diff_speed = int(v_speed) - int(v_old_speed)
+	v_diff_dexterity = int(v_dexterity) - int(v_old_dexterity)
+	v_diff_defense = int(v_defense) - int(v_old_defense)
+	v_diff_total = int(v_total) - int(v_old_total)
+
+	v_diff_strength_pc = v_diff_strength / v_old_strength
+	v_diff_speed_pc = v_diff_speed / v_old_speed
+	v_diff_dexterity_pc = v_diff_dexterity / v_old_dexterity
+	v_diff_defense_pc = v_diff_defense / v_old_defense
+	v_diff_total_pc = v_diff_total / v_old_total
+
+	
+	if v_diff_total == 0:
+		field_title = "Current Battle Stats (No Changes)"
+		field_value = (" ```" +
+			"\n" + ("{:<16s}").format("Strength:")  + ("{:"+str(maxl)+",d}").format(v_strength)  +
+			"\n" + ("{:<16s}").format("Speed:")     + ("{:"+str(maxl)+",d}").format(v_speed)     +
+			"\n" + ("{:<16s}").format("Dexterity:") + ("{:"+str(maxl)+",d}").format(v_dexterity) +
+			"\n" + ("{:<16s}").format("Defense:")   + ("{:"+str(maxl)+",d}").format(v_defense)   +
+			"\n" +
+			#"\n" + "=" * maxe +
+			"\n" + ("{:<16s}").format("Total:")   + ("{:"+str(maxl)+",d}").format(v_total)       +
+			"```")
+
+		footer = "No changes since " + torntime
+	else:
+		field_title = "Changes: Old Stats --->  New Stats"
+		
+
+		maxl = len(format(v_old_total,',d'))
+		maxe = 1
+
+		description = " ```"
+				
+		line = ("{:<3s}").format("Str: ") + ("{:" + str(maxl) + ",d}").format(v_old_strength) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_strength) + " (" + "{:.2%}".format(v_diff_strength_pc) + ")" + "\n"
+		maxe = max(maxe,len(line))
+		description = description + line
+		
+		line = ("{:<3s}").format("Spd: ") + ("{:"+str(maxl)+",d}").format(v_old_speed) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_speed) + " (" + "{:.2%}".format(v_diff_speed_pc) + ")" + "\n"
+		maxe = max(maxe,len(line))
+		description = description + line
+		
+		line = ("{:<3s}").format("Dex: ") + ("{:"+str(maxl)+",d}").format(v_old_dexterity) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_dexterity) + " (" + "{:.2%}".format(v_diff_dexterity_pc) + ")" + "\n"
+		maxe = max(maxe,len(line))
+		description = description + line
+		
+		line = ("{:<3s}").format("Def: ") + ("{:"+str(maxl)+",d}").format(v_old_defense) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_defense) + " (" + "{:.2%}".format(v_diff_defense_pc) + ")" + "\n"
+		maxe = max(maxe,len(line))
+		description = description + line
+
+		totalline = ("{:<3s}").format("Tot: ") + ("{:"+str(maxl)+",d}").format(v_old_total) + "  --->  " + ("{:"+str(maxl)+",d}").format(v_total) + " (" + "{:.2%}".format(v_diff_total_pc) + ")" + "\n"
+		maxe = max(maxe,len(totalline))
+
+		description = description + "\n"
+		#description = description + "=" * (maxe-1) + "\n"
+		description = description + totalline
+		
+
+		description = description + "```"
+
+		field_value = description
+
+		footer = "Changes since: " + torntime 
+
+	title = "Battle Stat changes for " + member.display_name
+
+	embed = discord.Embed(title=title, 
+		colour=discord.Colour(0x5dd3fa), 
+		url="https://www.torn.com/profiles.php?XID="+str(torn_id),
+		description = "")
+	embed.add_field(name=field_title, value=field_value, inline = False)
+		
+	embed.set_thumbnail(url=member.avatar_url)
+	
+	embed.set_footer(text=footer)
+
+	await ctx.send(embed=embed)
+
+
+
+
+
+	return
+
+
+
+
 
 
 bot.run(TOKEN)

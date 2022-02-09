@@ -256,6 +256,35 @@ class Faction(commands.Cog):
 		return(property)
 
 
+	async def get_rs(self,torn_id):
+
+		found = False
+		rs = "No API"
+
+		if os.path.isfile("./users.json"):
+			with open("./users.json","r") as inf:
+				dict = json.load(inf)
+			for disco_user in dict:
+				if dict[disco_user]["torn_id"] == str(torn_id):
+					if "torn_api" in dict[disco_user]:
+						torn_api = dict[disco_user]["torn_api"]
+						found = True
+
+			if found == True:
+				
+				v_apiType = "user"
+				v_apiSelection = "skills"
+				
+				APIURL = self.bot.v_apiAddress+v_apiType+'/?selections='+v_apiSelection+'&key='+torn_api
+				r = requests.get(APIURL) # queries "apiurl" and returns `response from Torn
+				v1 = r.json() # translates that response into a dict variable
+				if "error" in v1:
+					rs = "Call Error"
+				else:
+					rs = v1.get('racing',"0")			
+
+		return(rs)
+
 
 	@commands.command(name='teams', aliases = ["faction", "team"], help='Provide a list of faction members split by teams')
 	async def teams(self, ctx, extra = "NA"):
@@ -263,8 +292,8 @@ class Faction(commands.Cog):
 		#print(ctx.guild.roles)
 		
 		extra = extra.lower()
-		if extra not in ["nnb","na"]:
-			await ctx.send("What extra did you want? Only options so far is nnb")
+		if extra not in ["nnb","rs","na"]:
+			await ctx.send("What extra did you want? Only options so far are nnb and rs")
 			return
 		
 		embed = await self.teamwork(ctx.guild, extra)
@@ -275,7 +304,7 @@ class Faction(commands.Cog):
 
 	def is_mgt():
 	    async def predicate(ctx):
-
+	    	print("is_mgt")
 	    	server_id = str(ctx.guild.id)
 	    	this_channel = ctx.message.channel
 	    	this_channel_name = this_channel.name
@@ -300,6 +329,34 @@ class Faction(commands.Cog):
 	    return commands.check(predicate)
 
 
+
+	#@commands.command(name='removeid', aliases = ["remid", "remove", "rem"], hidden = True)
+	#@is_mgt()
+	#async def removeid(self, ctx, torn_id:int):
+	#	userFound = False
+
+	#	if os.path.isfile("./users.json"):
+	#		with open("./users.json","r") as inf:
+	#			#dict = eval(inf.read())
+	#			dict = json.load(inf)
+	#		for user in dict:
+	#			if dict[user]["torn_id"] == str(torn_id):
+	#				userFound = True
+	#				del dict[user]
+	#				response = "Torn ID " + str(torn_id) + " removed from bot"
+	#				await ctx.send(response)
+	#				
+	#				with open("./users.json", "w") as data_file:
+	#					wjson.dump(dict, data_file, indent=2)
+	#				return
+    #
+	#		response = "Torn ID " + str(torn_id) + " not found in bot"
+	#		await ctx.send(response)
+	#		return	
+	#	else:
+	#		response = "Issue with the file"
+	#		await ctx.send(response)
+	#		return
 
 
 	@commands.command(name='chain2', aliases = ["c2", "chains2"], hidden = True)
@@ -733,7 +790,7 @@ class Faction(commands.Cog):
 	async def xteams(self, ctx, extra = "NA"):
 		extra = extra.lower()
 
-		if extra not in ["e","cd","ecd","p","mh","nnb","mhp"]:
+		if extra not in ["e","cd","ecd","p","mh","nnb","mhp","rs"]:
 			await ctx.send("What extra did you want?")
 			return
 
@@ -755,10 +812,10 @@ class Faction(commands.Cog):
 		else:
 			raise __main__.NoFile("users.json")
 
-		faction_teams = ["Blue","Red","Green","Orange","Yellow","Pink"]
+		faction_teams = ["Blue","Green","Orange","Yellow","Pink","Purple"]
 
-		faction_leader_role = "HelloHigh Leader"
-		faction_manager_role = "Management"
+		faction_leader_role = "Head Of Council"
+		faction_manager_role = "Second In Command"
 		
 		team_leader_role = "Leader of XXX Team"
 		team_member_role = "XXX Team"
@@ -806,6 +863,9 @@ class Faction(commands.Cog):
 						elif extra == "cd":
 							current_cd = await self.get_cd(torn_id)
 							leader_name = leader_name + " (" + current_cd + ")"
+						elif extra == "rs":
+							current_rs = await self.get_rs(torn_id)
+							leader_name = leader_name + " (" + current_rs + ")"
 						elif extra == "ecd":
 							current_e = await self.get_e(torn_id)
 							current_cd = await self.get_cd(torn_id)
@@ -857,6 +917,9 @@ class Faction(commands.Cog):
 								elif extra == "cd":
 									current_cd = await self.get_cd(torn_id)
 									member_list = member_list + " (" + current_cd + ")"
+								elif extra == "rs":
+									current_rs = await self.get_rs(torn_id)
+									member_list = member_list + " (" + current_rs + ")"
 								elif extra == "ecd":
 									current_e = await self.get_e(torn_id)
 									current_cd = await self.get_cd(torn_id)
@@ -912,6 +975,9 @@ class Faction(commands.Cog):
 						elif extra == "cd":
 							current_cd = await self.get_cd(torn_id)
 							faction_leader_name = faction_leader_name + " (" + current_cd + ")"
+						elif extra == "rs":
+							current_rs = await self.get_rs(torn_id)
+							faction_leader_name = faction_leader_name + " (" + current_rs + ")"
 						elif extra == "ecd":
 							current_e = await self.get_e(torn_id)
 							current_cd = await self.get_cd(torn_id)
@@ -964,6 +1030,9 @@ class Faction(commands.Cog):
 							elif extra == "cd":
 								current_cd = await self.get_cd(torn_id)
 								management_list = management_list + " (" + current_cd + ")"
+							elif extra == "rs":
+								current_rs = await self.get_rs(torn_id)
+								management_list = management_list + " (" + current_rs + ")"
 							elif extra == "ecd":
 								current_e = await self.get_e(torn_id)
 								current_cd = await self.get_cd(torn_id)
@@ -997,6 +1066,8 @@ class Faction(commands.Cog):
 			title_text = title_text + " (With natural nerve)"
 		elif extra == "cd":
 			title_text = title_text + " (With drug cooldowns)"
+		elif extra == "rs":
+			title_text = title_text + " (With racing skill)"
 		elif extra == "ecd":
 			title_text = title_text + " (With energy and drug cd)"
 
